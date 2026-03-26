@@ -1,5 +1,5 @@
 import psycopg2
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 from data_generator import generate_users, generate_sessions, generate_events
 
@@ -49,17 +49,21 @@ def load_events(events_list):
             conn.close()
 
 if __name__ == "__main__":
+    n_days = 5
     # 1. Генерация пользователей
     users = generate_users(5)
 
     # 2. Базовая дата
     base_date = datetime(2024, 1, 1)
 
-    # 3. Генерация сессии
-    sessions = generate_sessions(users, base_date)
+    for day in range(n_days):
+        current_date = base_date + timedelta(days=day)
+        print(f'Дата:{current_date}')
+        
+        # 3. Генерация сессии
+        sessions = generate_sessions(users, current_date)
+        # 4. Генерация событий
+        events = generate_events(sessions)
 
-    # 4. Генерация событий
-    events = generate_events(sessions)
-
-    print(f"Сгенерировано событий: {len(events)}")
-    load_events(events)
+        print(f"Сгенерировано событий: {len(events)}")
+        load_events(events)
