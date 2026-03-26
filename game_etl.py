@@ -56,10 +56,19 @@ if __name__ == "__main__":
     # 2. Базовая дата
     base_date = datetime(2024, 1, 1)
 
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur = conn.cursor()
+
+    cur.execute("TRUNCATE TABLE raw_events;")
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
     for day in range(n_days):
         current_date = base_date + timedelta(days=day)
         print(f'Дата:{current_date}')
-        
+
         # 3. Генерация сессии
         sessions = generate_sessions(users, current_date)
         # 4. Генерация событий
