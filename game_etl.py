@@ -85,21 +85,51 @@ def load_events(events_list):
         if 'conn' in locals():
             conn.close()
 
+# -----------------------------
+# 4. Функция валидации событий
+# -----------------------------
+def validate_events(events_list):
+    """Проверка событий перед загрузкой"""
+    valid_events = []
+
+    for event in events_list:
+        # 1. Проверка обязательных полей
+        if not event.get("event_id"):
+            continue
+        if not event.get("event_time"):
+            continue
+        if not event.get("user_id"):
+            continue
+        if not event.get("session_id"):
+            continue
+        if not event.get("event_type"):
+            continue
+
+        # 2. Проверка типа события
+        allowed_types = ["session_start", "level_start", "level_complete", "ad_view", "purchase"]
+        if event["event_type"] not in allowed_types:
+            continue
+
+        # 3. Добавляем валидные события
+        valid_events.append(event)
+
+    return valid_events
+
 
 # -----------------------------
-# 4. Основной ETL процесс
+# 5. Основной ETL процесс
 # -----------------------------
 if __name__ == "__main__":
-    # 4.1 Создаём таблицу логов
+    # 5.1 Создаём таблицу логов
     create_etl_logs_table()
 
-    # 4.2 Настройки ETL
+    # 5.2 Настройки ETL
     n_days = 5
     n_users = 5
     users = generate_users(n_users)
     base_date = datetime(2024, 1, 1)
 
-    # 4.3 Очищаем raw_events перед загрузкой
+    # 5.3 Очищаем raw_events перед загрузкой
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         with conn.cursor() as cur:
@@ -109,7 +139,7 @@ if __name__ == "__main__":
         if 'conn' in locals():
             conn.close()
 
-    # 4.4 Генерация и загрузка событий по дням
+    # 5.4 Генерация и загрузка событий по дням
     for day in range(n_days):
         current_date = base_date + timedelta(days=day)
         print(f"Дата: {current_date}")
@@ -119,6 +149,14 @@ if __name__ == "__main__":
             sessions = generate_sessions(users, current_date)
             events = generate_events(sessions)
             print(f"Сгенерировано событий: {len(events)}")
+
+            # проверка данных
+            valid_events = validate_events(events)
+            print(f"После очистки: {len(valid_events)}")
+
+            # количество отброшенных событий
+            dropped = len(events) - len(valid_events)
+            print(f"Отброшено событий: {dropped}")
 
             # Загрузка в БД и логирование
             rows_loaded = load_events(events)
