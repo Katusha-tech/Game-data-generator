@@ -33,15 +33,15 @@ def create_etl_logs_table():
 # -----------------------------
 # 2. Функция логирования ETL
 # -----------------------------
-def log_etl(table_name, rows_loaded, status, message=''):
+def log_etl(table_name, rows_loaded, status, message='', rows_dropped=0):
     """Логирование ETL процесса в таблицу etl_logs"""
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO etl_logs (table_name, load_date, rows_loaded, status, message)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (table_name, datetime.now(), rows_loaded, status, message))
+                INSERT INTO etl_logs (table_name, load_date, rows_loaded, status, message, rows_dropped)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (table_name, datetime.now(), rows_loaded, status, message, rows_dropped))
         conn.commit()
     except Exception as e:
         print(f"Ошибка при логировании ETL: {e}")
@@ -160,8 +160,8 @@ if __name__ == "__main__":
 
             # Загрузка в БД и логирование
             rows_loaded = load_events(events)
-            log_etl("raw_events", rows_loaded, "SUCCESS")
+            log_etl("raw_events", rows_loaded, "SUCCESS", rows_dropped=dropped)
 
         except Exception as e:
             print(f"Ошибка ETL за {current_date}: {e}")
-            log_etl("raw_events", 0, "ERROR", str(e))
+            log_etl("raw_events", 0, "ERROR", str(e), rows_dropped=0)
