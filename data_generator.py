@@ -95,17 +95,23 @@ def generate_events(sessions: list[dict]) -> list[dict]:
             })
 
         # purchase
+        # purchase (с возможной порчей данных)
         if random.random() < 0.1:
-            purchase_time = start + timedelta(minutes=random.randint(0, int((end - start).total_seconds() // 60)))
-            amount = random.choice([1.99, 4.99, 9.99])
-            events.append({
-                "event_id": uuid.uuid4(),
-                "user_id": user_id,
-                "session_id": session_id,
-                "event_type": "purchase",
-                "event_time": purchase_time,
-                "event_params": {"amount": amount}
-            })
+            event_type = "bad_event"
+        else:
+            event_type = "purchase"
+
+        purchase_time = start + timedelta(minutes=random.randint(0, int((end - start).total_seconds() // 60)))
+        amount = random.choice([1.99, 4.99, 9.99])
+
+        events.append({
+            "event_id": uuid.uuid4(),
+            "user_id": user_id,
+            "session_id": session_id,
+            "event_type": event_type,
+            "event_time": purchase_time,
+            "event_params": {"amount": amount}
+        })
 
     return sorted(events, key=lambda x: x["event_time"])
 
