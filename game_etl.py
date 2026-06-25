@@ -3,51 +3,9 @@ from datetime import datetime, timedelta
 import json
 from data_generator import generate_users, generate_sessions, generate_events
 from config import DB_CONFIG  
+from analytics import update_user_activity_summary
+from logger import create_etl_logs_table, log_etl
 
-# -----------------------------
-# 1. Создание таблицы логов
-# -----------------------------
-def create_etl_logs_table():
-    """Создаёт таблицу etl_logs"""
-    try:
-        conn = psycopg2.connect(**DB_CONFIG)
-        with conn.cursor() as cur:
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS etl_logs (
-                    id SERIAL PRIMARY KEY,
-                    table_name VARCHAR(50) NOT NULL,
-                    load_date TIMESTAMP NOT NULL,
-                    rows_loaded INT NOT NULL,
-                    status VARCHAR(20) NOT NULL,
-                    message TEXT
-                );
-            """)
-        conn.commit()
-    except Exception as e:
-        print(f"Ошибка при создании таблицы etl_logs: {e}")
-    finally:
-        if 'conn' in locals():
-            conn.close()
-
-
-# -----------------------------
-# 2. Функция логирования ETL
-# -----------------------------
-def log_etl(table_name, rows_loaded, status, message='', rows_dropped=0):
-    """Логирование ETL процесса в таблицу etl_logs"""
-    try:
-        conn = psycopg2.connect(**DB_CONFIG)
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO etl_logs (table_name, load_date, rows_loaded, status, message, rows_dropped)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (table_name, datetime.now(), rows_loaded, status, message, rows_dropped))
-        conn.commit()
-    except Exception as e:
-        print(f"Ошибка при логировании ETL: {e}")
-    finally:
-        if 'conn' in locals():
-            conn.close()
 
 
 # -----------------------------
@@ -114,50 +72,7 @@ def validate_events(events_list):
         valid_events.append(event)
 
     return valid_events
-def update_user_activity_summary():
-    """Обновляет витрину user_activity_summary"""
 
-    try:
-        conn = psycopg2.connect(**DB_CONFIG)
-
-        with conn.cursor() as cur:
-
-            # очищаем витрину
-            cur.execute("""
-                TRUNCATE TABLE user_activity_summary;
-            """)
-
-            # загружаем агрегаты
-            cur.execute("""
-                INSERT INTO user_activity_summary (
-                    user_id,
-                    total_events,
-                    total_sessions,
-                    total_purchases,
-                    total_ad_views
-                )
-
-                SELECT
-                    user_id,
-                    COUNT(*) AS total_events,
-                    COUNT(DISTINCT session_id) AS total_sessions,
-                    SUM(CASE WHEN event_type = 'purchase' THEN 1 ELSE 0 END) AS total_purchases,
-                    SUM(CASE WHEN event_type = 'ad_view' THEN 1 ELSE 0 END) AS total_ad_views
-
-                FROM raw_events
-                GROUP BY user_id;
-            """)
-
-        conn.commit()
-
-        print("Витрина user_activity_summary обновлена")
-
-    except Exception as e:
-        print(f"Ошибка обновления витрины: {e}")
-
-    finally:
-        if 'conn' in locals():
-            conn.close()
 
 # -----------------------------
 # 5. Основной ETL процесс
