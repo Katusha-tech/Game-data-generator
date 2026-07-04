@@ -11,7 +11,7 @@ from etl import validate_events, load_events
 # 1. Основной ETL процесс
 
 if __name__ == "__main__":
-    # 5.1 Создаём таблицу логов
+    # 1.1 Создаём таблицу логов
     create_etl_logs_table()
 
     # 1.2 Настройки ETL
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     users = generate_users(n_users)
     base_date = datetime(2024, 1, 1)
 
-    # 1.2 Очищаем raw_events перед загрузкой
+    # 1.3 Очищаем raw_events перед загрузкой
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         with conn.cursor() as cur:
@@ -30,7 +30,7 @@ if __name__ == "__main__":
         if 'conn' in locals():
             conn.close()
 
-    # 1.3 Генерация и загрузка событий по дням
+    # 1.4 Генерация и загрузка событий по дням
     for day in range(n_days):
         current_date = base_date + timedelta(days=day)
         print(f"Дата: {current_date}")

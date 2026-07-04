@@ -1,7 +1,7 @@
 import psycopg2
 from config import DB_CONFIG
 
-# 1. Обновление витрины
+# 1. Обновление аналитической витрины
 def update_user_activity_summary():
     """Обновляет витрину user_activity_summary"""
 
